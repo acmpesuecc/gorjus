@@ -38,4 +38,4 @@ async def generate_image(item: Item):
             size=(400, 300)        
     )
 
-    return FileResponse("python_org.png")
+    return FileResponse("latest.png")
