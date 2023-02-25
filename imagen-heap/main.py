@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from html2image import Html2Image
 
 app = FastAPI()
-hti = Html2Image()
+hti = Html2Image(custom_flags=["--no-sandbox"])
 
 class Item(BaseModel):
     html_str: str
