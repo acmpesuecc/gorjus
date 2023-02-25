@@ -1,4 +1,4 @@
-use image::{self};
+use image;
 use image_compare::Metric;
 use std::path::PathBuf;
 
@@ -35,62 +35,73 @@ fn matcher(img1: &str, img2: &str) -> f64 {
 
 fn main() {
     matcher("./src/test_images/circ1.jpg", "./src/test_images/circ2.jpg");
-
-    /*
-    let image_one = image::open("ads1.jpg")
-        .expect("Could not find test-image")
-        .into_rgb8();
-    let image_two = image::open("ads2.jpg")
-        .expect("Could not find test-image")
-        .into_rgb8();
-    let result = image_compare::rgb_hybrid_compare(&image_one, &image_two)
-        .expect("Images had different dimensions");
-
-    println!("{:?}", result.score);
-    // 1 and 2 => 85.56%
-    // 1 and 3 => 81.71%
-    // 1 and 4 => 79.2%
-    // */
-
-    /*
-    let image_one = image::open("ads1.jpg")
-        .expect("Could not find test-image")
-        .into_luma8();
-    let image_two = image::open("ads4.jpg")
-        .expect("Could not find test-image")
-        .into_luma8();
-    let result =
-        image_compare::gray_similarity_structure(&Algorithm::MSSIMSimple, &image_one, &image_two)
-            .expect("Images had different dimensions");
-
-    println!("{:?}", result.score);
-    // 1 and 2: 87.6
-    // 1 and 3: 83.31
-    // 1 and 4: 82.38
-    // */
-    /*
-        let image_one = image::open("ads1.jpg")
-            .expect("Could not find test-image")
-            .into_luma8();
-        let image_two = image::open("ads3.jpg")
-            .expect("Could not find test-image")
-            .into_luma8();
-        let result =
-            image_compare::gray_similarity_histogram(Metric::Hellinger, &image_one, &image_two)
-                .expect("Images had different dimensions");
-        println!("{:?}", result);
-    */
-    // 1 and 2 give 11.75
-    // 1 and 3 give 24.03
-    // 1 and 4 give 33.09
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::matcher;
+
+    struct MatchTest {
+        im1: String,
+        im2: String,
+        max_delta: f64,
+        expected_val: f64,
+    }
+
+    impl MatchTest {
+        fn new(im1: &str, im2: &str, expected_val: f64) -> MatchTest {
+            MatchTest {
+                im1: im1.to_owned(),
+                im2: im2.to_owned(),
+                max_delta: 0.0001,
+                expected_val,
+            }
+        }
+
+        fn run_test(&mut self) {
+            let result = matcher(&self.im1, &self.im2);
+            let diff = self.expected_val - result;
+            println!(
+                "Result {} Expected {} Diff {}",
+                result, self.expected_val, diff
+            );
+            // HACK check range
+            assert!(diff < self.max_delta);
+            assert!(diff > (-1.0 * self.max_delta));
+        }
+    }
 
     #[test]
     fn it_works() {
         let result = 2 + 2;
         assert_eq!(result, 4);
+    }
+
+    #[test]
+    fn ads_test() {
+        // 1 and 2 give 11.75
+        // 1 and 3 give 24.03
+        // 1 and 4 give 33.09
+        let tests: Vec<MatchTest> = vec![
+            MatchTest::new(
+                "./src/test_images/ads1.jpg",
+                "./src/test_images/ads2.jpg",
+                1.00 - 0.1175,
+            ),
+            MatchTest::new(
+                "./src/test_images/ads1.jpg",
+                "./src/test_images/ads3.jpg",
+                1.00 - 0.2403,
+            ),
+            MatchTest::new(
+                "./src/test_images/ads1.jpg",
+                "./src/test_images/ads2.jpg",
+                1.00 - 0.1175,
+            ),
+        ];
+
+        for mut test in tests {
+            test.run_test();
+        }
     }
 }
