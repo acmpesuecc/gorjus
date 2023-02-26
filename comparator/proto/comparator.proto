@@ -1,0 +1,16 @@
+// Protobuf Definition for the Gorjus Services
+syntax = "proto3";
+package comparator;
+
+service Comparator {
+  rpc CompareImages(ImageCompareRequest) returns (ImageCompareReply) {}
+}
+
+message ImageCompareRequest {
+  string image1name = 1;
+  string image2name = 2;
+}
+
+message ImageCompareReply {
+  float comparison_percentage = 1;
+}
