@@ -39,3 +39,7 @@ async def generate_image(item: Item):
     )
 
     return FileResponse("latest.png")
+
+@app.get("/latest")
+async def get_latest():
+    return FileResponse("latest.png")
