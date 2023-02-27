@@ -12,18 +12,18 @@ pub struct MatchOperation {
 }
 
 impl MatchOperation {
-    pub fn new(im1: &str, im2: &str, expected_val: f64) -> MatchOperation {
+    pub fn new(im1: String, im2: String, expected_val: f64) -> MatchOperation {
         MatchOperation {
-            im1: im1.to_string(),
-            im2: im2.to_string(),
+            im1,
+            im2,
             max_delta: 0.0001,
             expected_val,
         }
     }
 
-    pub fn match_images(&self, img1: &str, img2: &str) -> f64 {
-        let im1_path: PathBuf = PathBuf::from(img1);
-        let im2_path: PathBuf = PathBuf::from(img2);
+    pub fn match_images(&self) -> f64 {
+        let im1_path: PathBuf = PathBuf::from(self.im1.clone().as_str());
+        let im2_path: PathBuf = PathBuf::from(self.im2.clone().as_str());
 
         println!(
             "Comparison Result for {} <> {}",
@@ -56,7 +56,7 @@ impl MatchOperation {
     }
 
     pub fn run_test(&mut self, expected_val: f64) {
-        let result = self.match_images(self.im1.as_ref(), self.im2.as_ref());
+        let result = self.match_images();
         let diff = expected_val - result;
         println!("Result {} Expected {} Diff {}", result, expected_val, diff);
         // HACK check range
@@ -81,20 +81,20 @@ mod tests {
         let tests: Vec<MatchOperation> = vec![
             // 1 and 2 give 11.75
             MatchOperation::new(
-                "./src/test_images/ads1.jpg",
-                "./src/test_images/ads2.jpg",
+                "./src/test_images/ads1.jpg".to_string(),
+                "./src/test_images/ads2.jpg".to_string(),
                 1.00 - 0.1175,
             ),
             // 1 and 3 give 24.03
             MatchOperation::new(
-                "./src/test_images/ads1.jpg",
-                "./src/test_images/ads3.jpg",
+                "./src/test_images/ads1.jpg".to_string(),
+                "./src/test_images/ads3.jpg".to_string(),
                 1.00 - 0.2403,
             ),
             // 1 and 4 give 33.09
             MatchOperation::new(
-                "./src/test_images/ads1.jpg",
-                "./src/test_images/ads2.jpg",
+                "./src/test_images/ads1.jpg".to_string(),
+                "./src/test_images/ads2.jpg".to_string(),
                 1.00 - 0.1175,
             ),
         ];

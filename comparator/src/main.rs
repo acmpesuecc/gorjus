@@ -17,15 +17,18 @@ pub struct MyComparator {}
 impl Comparator for MyComparator {
     async fn compare_images(
         &self,
-        request: Request<ImageCompareRequest>,
+        my_request: Request<ImageCompareRequest>,
     ) -> Result<Response<ImageCompareReply>, Status> {
-        // Actually do the comparison
-        println!("Got a request! {:?}", request);
+        let req = my_request.into_inner();
 
-        // let operation = MatchOperation::new();
+        // Actually do the comparison
+        println!("Got a request! {:?}", &req);
+
+        let operation = MatchOperation::new(req.clone().image1name, req.image2name, 1.00 - 0.1175)
+            .match_images();
 
         let reply = comparator::ImageCompareReply {
-            comparison_percentage: 69.69,
+            comparison_percentage: operation as f32,
         };
 
         Ok(Response::new(reply))
