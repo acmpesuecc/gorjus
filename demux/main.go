@@ -1,82 +1,142 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"gorm.io/driver/sqlite" // Sqlite driver based on GGO
+	"github.com/anirudhRowjee/cssbatt-demux/database"
+	"github.com/anirudhRowjee/cssbatt-demux/proto"
+	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-type User struct {
-	gorm.Model
-	name     string
-	email    string
-	password string
+type ImageCompareRequestJSON struct {
+	im1_name string `json:"im1_name"`
+	im2_name string `json:"im2_name"`
 }
 
-type Question struct {
-	number             int
-	round              int
-	reference_img      []byte
-	accuracy_threshold float64
-}
+func get_image_compare_perc(client proto.ComparatorClient, im1_name string, im2_name string) (float32, error) {
+	value := 0.0
 
-type RenderEvent struct {
-	gorm.Model
-	user                  User
-	question              Question
-	css_content           string
-	rendered_output_image []byte
-	rendered_time         time.Time
-}
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 
-type CompareEvent struct {
-	gorm.Model
-	user                User
-	question            Question
-	render_event        RenderEvent
-	accuracy_percentage float64
-}
+	resp, err := client.CompareImages(ctx, &proto.ImageCompareRequest{
+		Image1Name: im1_name, Image2Name: im2_name,
+	})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
 
-type LeaderboardRecord struct {
-	gorm.Model
-	question Question
-	points   int
+	log.Printf("Greeting: %f", resp.GetComparisonPercentage())
+	cancel()
+	value = float64(resp.GetComparisonPercentage())
+	return float32(value), nil
 }
 
 func main() {
 
-	// github.com/mattn/go-sqlite3
+	// TODO Change this to the environment IP Address
+	addr := flag.String("addr", "localhost:50051", "the address to connect to")
+	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	log.Println("Successfully connected to GRPC")
+
+	protoclient := proto.NewComparatorClient(conn)
+
 	db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{})
 	if err != nil {
-		panic("error " + err)
+		fmt.Println("Error", err)
+		return
 	}
+	log.Println("Finished DB Initialization")
 
-	server := http.NewServeMux()
+	// Migrations
+	db.AutoMigrate(&database.RenderEvent{})
+	db.AutoMigrate(&database.CompareEvent{})
+	db.AutoMigrate(&database.LeaderboardRecord{})
+	db.AutoMigrate(&database.User{})
+	db.AutoMigrate(&database.Question{})
+	log.Println("Finished DB Automigration")
 
-	server.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong"))
+	r := gin.Default()
+
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
 	})
 
-	server.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("login"))
+	r.GET("/login", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "login",
+		})
 	})
 
-	server.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("register"))
+	r.POST("/register", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "register",
+		})
 	})
 
-	server.HandleFunc("/leaderboard", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("leaderboard"))
+	r.GET("/leaderboard", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "leaderboard",
+		})
 	})
 
-	server.HandleFunc("/challenges", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("challenges"))
+	// TODO Add Routes for Questions
+	// TODO Add Routes for Image Delivery
+
+	r.POST("/compare_existing", func(c *gin.Context) {
+
+		// Take in image names, make rpc call, return result
+		args := ImageCompareRequestJSON{}
+		myerr := true
+
+		args.im1_name, myerr = c.GetPostForm("im1_name")
+		if !myerr {
+			log.Println("Im1name not there")
+		}
+		args.im2_name, myerr = c.GetPostForm("im2_name")
+		if !myerr {
+			log.Println("Im2name not there")
+		}
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   err.Error(),
+				"message": "Badly Formatted Request Body",
+			})
+		}
+
+		log.Println("Args Recived ", args, err)
+
+		value, err := get_image_compare_perc(protoclient, args.im1_name, args.im2_name)
+
+		if err != nil {
+			log.Println("Broken")
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err,
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": value,
+		})
+
 	})
 
-	server.HandleFunc("/compare", func(w http.ResponseWriter, r *http.Request) {
+	r.POST("/compare", func(c *gin.Context) {
 
 		// Takes in:
 		// [UserID: String, RefImage: Byte[], UserImge: Byte[]]
@@ -85,21 +145,22 @@ func main() {
 		// [accuracy: float]
 		// Make a call to the comparator service here and proxy the response
 
-		// TODO Talk to the Comparator Service
-		w.Write([]byte("compare"))
+		c.JSON(http.StatusOK, gin.H{
+			"message": "compare",
+		})
 	})
 
-	server.HandleFunc("/render", func(w http.ResponseWriter, r *http.Request) {
+	r.POST("/render", func(c *gin.Context) {
 		// Takes in:
 		// [UserID: String, UserHTMLnCSS: String]
 		// Returns:
 		// [RenderedImge: Byte[]]
-
-		// TODO Talk to the Comparator Service
-		w.Write([]byte("render"))
-
+		c.JSON(http.StatusOK, gin.H{
+			"message": "render",
+		})
 	})
 
-	http.ListenAndServe(":8080", server)
-	fmt.Println("Hello, world!")
+	log.Println("Finished Route Declarations")
+
+	http.ListenAndServe(":8080", r)
 }
