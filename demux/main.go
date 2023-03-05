@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -57,43 +56,31 @@ func auth_token_verify(c *gin.Context) {
 		"status":  "false",
 		"message": "You are not authenticated to do this!",
 	})
-   c.Abort()
-}
-
-func get_image_compare_perc(
-	client proto.ComparatorClient,
-	im1_name string,
-	im2_name string,
-) (float32, error) {
-	value := 0.0
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-
-	resp, err := client.CompareImages(ctx, &proto.ImageCompareRequest{
-		Image1Name: im1_name, Image2Name: im2_name,
-	})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-
-	log.Printf("Greeting: %f", resp.GetComparisonPercentage())
-	cancel()
-	value = float64(resp.GetComparisonPercentage())
-	return float32(value), nil
+	c.Abort()
 }
 
 func main() {
 
 	// TODO Change this to the environment IP Address
 	addr := flag.String("addr", "localhost:50051", "the address to connect to")
-	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	comparator_grpc_conn, err := grpc.Dial(
+		*addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	renderer_grpc_conn, err := grpc.Dial(
+		"localhost:50052",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	defer conn.Close()
+	defer comparator_grpc_conn.Close()
 	log.Println("Successfully connected to GRPC")
 
-	protoclient := proto.NewComparatorClient(conn)
+	protoclient_compare := proto.NewComparatorClient(comparator_grpc_conn)
+	protoclient_render := proto.NewRendererClient(renderer_grpc_conn)
 
 	db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{})
 	globdb = db
@@ -184,7 +171,7 @@ func main() {
 					"message": "logged in!",
 					"token":   string(live_token),
 				})
-            return
+				return
 			}
 		}
 		//User not found
@@ -263,25 +250,57 @@ func main() {
 	})
 
 	r.GET("/leaderboard", func(c *gin.Context) {
+		// TODO Implement Leaderboard
 		c.JSON(http.StatusOK, gin.H{
 			"message": "leaderboard",
 		})
 	})
 
-	// TODO Add Routes for Questions
-	// TODO Add Routes for Image Delivery
-
-	r.POST("/compare_existing", func(c *gin.Context) {
-
-		// Take in image names, make rpc call, return result
-		args := ImageCompareRequestJSON{}
+	r.POST("/render", func(c *gin.Context) {
+		args := proto.ImageRenderRequestJSON{}
 		myerr := true
 
-		args.im1_name, myerr = c.GetPostForm("im1_name")
+		args.Name, myerr = c.GetPostForm("name")
+		if !myerr {
+			log.Println("image name not there")
+		}
+		args.Html_string, myerr = c.GetPostForm("html_string")
+		if !myerr {
+			log.Println("html string not there")
+		}
+		args.Css_string, myerr = c.GetPostForm("css_string")
+		if !myerr {
+			log.Println("css string not there")
+		}
+
+		image, err := proto.Get_image_rendered_output(
+			protoclient_render,
+			args.Html_string,
+			args.Css_string,
+			args.Name,
+		)
+		if err != nil {
+			log.Println("Broken")
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err,
+			})
+		}
+
+		c.Data(http.StatusOK, "image/png", image)
+	})
+
+	r.POST("/compare_existing", func(c *gin.Context) {
+		// This also works!
+
+		// Take in image names, make rpc call, return result
+		args := proto.ImageCompareRequestJSON{}
+		myerr := true
+
+		args.Im1_name, myerr = c.GetPostForm("im1_name")
 		if !myerr {
 			log.Println("Im1name not there")
 		}
-		args.im2_name, myerr = c.GetPostForm("im2_name")
+		args.Im2_name, myerr = c.GetPostForm("im2_name")
 		if !myerr {
 			log.Println("Im2name not there")
 		}
@@ -295,8 +314,11 @@ func main() {
 
 		log.Println("Args Recived ", args, err)
 
-		value, err := get_image_compare_perc(protoclient, args.im1_name, args.im2_name)
-
+		value, err := proto.Get_image_compare_perc(
+			protoclient_compare,
+			args.Im1_name,
+			args.Im2_name,
+		)
 		if err != nil {
 			log.Println("Broken")
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -310,28 +332,45 @@ func main() {
 
 	})
 
-	r.POST("/compare", func(c *gin.Context) {
-
-		// Takes in:
-		// [UserID: String, RefImage: Byte[], UserImge: Byte[]]
-		// TODO look at taking in a reference image ID
-		// Returns:
-		// [accuracy: float]
-		// Make a call to the comparator service here and proxy the response
-
-		c.JSON(http.StatusOK, gin.H{
-			"message": "compare",
-		})
-	})
-
-	r.POST("/render", func(c *gin.Context) {
+	r.POST("/deliver", func(c *gin.Context) {
 		// Takes in:
 		// [UserID: String, UserHTMLnCSS: String]
 		// Returns:
 		// [RenderedImge: Byte[]]
+		// THIS WORKS!
+
+		myerr := false
+		args := proto.ImageDeliverRequestJSON{}
+		args.Name, myerr = c.GetPostForm("name")
+		if !myerr {
+			log.Println("name not there")
+		}
+
+		image_bytes, err := proto.Get_image(protoclient_render, args.Name)
+		if err != nil {
+			log.Println("Broken")
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err,
+			})
+		}
+
+		c.Data(http.StatusOK, "image/png", image_bytes)
+
+	})
+
+	r.POST("/compare", func(c *gin.Context) {
+
+		// Takes in:
+		// [UserID: String, RefImage: Byte[], UserImge: Byte[]]
+		// Returns:
+		// [accuracy: float]
+		// Make a call to the comparator service here and proxy the response
+		// TODO look at taking in a reference image ID
+
 		c.JSON(http.StatusOK, gin.H{
-			"message": "render",
+			"message": "compare",
 		})
+
 	})
 
 	log.Println("Finished Route Declarations")
