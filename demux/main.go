@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"log"
@@ -121,6 +122,15 @@ func main() {
 		checkuserstruct := database.User{
 			Name: b.Username,
 		}
+		passhash := sha256.Sum256([]byte(b.Password))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "error logging in.",
+			})
+		}
+		b.Password = string(passhash[:])
+		log.Println(b)
 		var db_res []database.User
 		db.Where(&checkuserstruct).Find(&db_res)
 
@@ -197,7 +207,10 @@ func main() {
 		}
 		var db_res []database.User
 		db.Where(checkuserstruct).Find(&db_res)
+		hashpassword_bytes := sha256.Sum256([]byte(b.Password))
+		hashpassword := string(hashpassword_bytes[:])
 
+		log.Println(hashpassword)
 		for _, v := range db_res {
 			if v.Name == b.Username {
 				c.JSON(http.StatusOK, gin.H{
@@ -207,11 +220,18 @@ func main() {
 				return
 			}
 		}
-
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Error creating user :(",
+			})
+			log.Println(err)
+			return
+		}
 		newuser := database.User{
 			Name:     b.Username,
 			Email:    b.Email,
-			Password: b.Password,
+			Password: hashpassword,
 		}
 
 		result := db.Create(&newuser)
