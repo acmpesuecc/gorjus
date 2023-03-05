@@ -40,6 +40,7 @@ type CompareEvent struct {
 
 type LeaderboardRecord struct {
 	gorm.Model
+	user     User
 	question Question
 	points   int
 }
