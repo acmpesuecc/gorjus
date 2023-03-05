@@ -13,9 +13,15 @@ type User struct {
 	password string
 }
 
+type Hexcodes struct {
+	color string
+}
+
 type Question struct {
 	gorm.Model
 	number             int
+	difficulty         int
+	hexcodes           []Hexcodes
 	round              int
 	reference_img      []byte
 	accuracy_threshold float64
