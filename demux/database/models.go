@@ -16,6 +16,7 @@ type User struct {
 type Question struct {
 	gorm.Model
 	number             int
+	difficulty         int
 	round              int
 	reference_img      []byte
 	accuracy_threshold float64
