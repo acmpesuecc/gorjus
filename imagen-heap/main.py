@@ -1,55 +1,63 @@
 # test
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
-from pydantic import BaseModel
 from html2image import Html2Image
 
-app = FastAPI()
+import grpc
+import comparator_pb2
+from concurrent import futures
+import comparator_pb2_grpc
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 hti = Html2Image(custom_flags=["--no-sandbox"])
+hti.output_path = "./render/rendered_images/"
 
-class Item(BaseModel):
-    html_str: str
-    css_str: str
+class ImageRenderServer(comparator_pb2_grpc.RendererServicer):
+    """
+    Server Method for the Service
+    """
 
-@app.get("/")
-async def read_root():
+    def RenderImage(self, request: comparator_pb2.RenderImageRequest, context):
 
-    # This is the core method
-    hti.screenshot(
-            save_as='python_org.png',
-            html_str = """<h1> An interesting title </h1> This page will be red""",
-            css_str = "body {background: red;}",
-            size=(400, 300)        
-    )
+        print("[LOG] Processing Image Generation Request", request.image_html, request.image_css)
+        image_path = hti.screenshot(
+                save_as= request.imageName,
+                html_str = request.image_html,
+                css_str = request.image_css,
+                size=(400, 300)        
+                )[0]
 
-    return FileResponse("python_org.png")
+        with open(image_path, "rb") as image:
+            f = image.read()
+            image_content = bytearray(f)
 
-@app.post("/")
-async def generate_image(item: Item):
+        print("[LOG] Succesfully Processed Image Generation Request", request)
+        return comparator_pb2.RenderImageReply(
+                name = request.imageName,
+                error = None,
+                image = bytes(image_content)
+                )
 
-    print(item.html_str, item.css_str)
+    def DeliverImage(self, request: comparator_pb2.DeliverImageRequest, context):
 
-    # This is the core method
-    hti.screenshot(
-            # TODO Generate a hash for this image that you can track
-            save_as='latest.png',
-            html_str = item.html_str,
-            css_str = item.css_str,
-            size=(400, 300)        
-    )
+        print("[LOG] Processing Image Delivery Request", request)
 
-    return FileResponse("latest.png")
+        with open(hti.output_path + request.name, "rb") as image:
+            f = image.read()
+            image_content = bytearray(f)
 
-@app.get("/latest")
-async def get_latest():
-    return FileResponse("latest.png")
+        print("[LOG] Succesfully Processed Image Delivery Request", request)
+        return comparator_pb2.DeliverImageReply(
+                name = request.name,
+                image = bytes(image_content),
+                )
+
+
+def serve():
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+  comparator_pb2_grpc.add_RendererServicer_to_server(
+          ImageRenderServer() , server)
+  server.add_insecure_port('[::]:50052')
+  server.start()
+  server.wait_for_termination()
+
+if __name__ == "__main__":
+    serve()

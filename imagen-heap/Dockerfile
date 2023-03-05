@@ -11,13 +11,16 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./main.py /code/
+COPY ./*.py /code/
 
 # Do this so chrome can run 
 # https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
 # RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1001 ubuntu
 # USER ubuntu
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+# Expose the port
+EXPOSE 50052
+CMD ["python", "main.py"]
 
 # RUN COMMMAND 
 # docker build -t gorjus-imagen .
