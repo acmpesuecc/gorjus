@@ -14,3 +14,27 @@ message ImageCompareRequest {
 }
 
 message ImageCompareReply { float comparison_percentage = 1; }
+
+service Renderer {
+  rpc RenderImage(RenderImageRequest) returns (RenderImageReply) {}
+  rpc DeliverImage(DeliverImageRequest) returns (DeliverImageReply) {}
+}
+
+message RenderImageRequest {
+  string imageName = 1;
+  string image_css = 2;
+  string image_html = 3;
+}
+
+message RenderImageReply {
+  string name = 1;
+  string error = 2;
+  bytes image = 3;
+}
+
+message DeliverImageRequest { string name = 1; }
+
+message DeliverImageReply {
+  string name = 1;
+  bytes image = 2;
+}
