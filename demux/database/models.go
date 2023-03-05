@@ -6,11 +6,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type Sessions struct {
+	gorm.Model
+	Name  string
+	Token string
+}
+
 type User struct {
 	gorm.Model
-	name     string
-	email    string
-	password string
+	Name     string
+	Email    string
+	Password string
 }
 
 type Question struct {

@@ -11,15 +11,53 @@ import (
 	"github.com/anirudhRowjee/cssbatt-demux/database"
 	"github.com/anirudhRowjee/cssbatt-demux/proto"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
+var globdb *gorm.DB
+
 type ImageCompareRequestJSON struct {
 	im1_name string `json:"im1_name"`
 	im2_name string `json:"im2_name"`
+}
+
+// Can use the models User struct, []
+type RegisterUserRequestJSON struct {
+	Username string `form:"username"`
+	Password string `form:"password"`
+	Email    string `form:"email"`
+}
+
+type LoginUserRequestJSON struct {
+	Username string `form:"username"`
+	Password string `form:"password"`
+}
+
+func auth_token_verify(c *gin.Context) {
+	current_token := c.Request.Header["Token"]
+	current_user := c.Request.Header["Username"]
+	user_session_record := database.Sessions{
+		Name:  current_user[0],
+		Token: current_token[0],
+	}
+	var db_res []database.Sessions
+	log.Println(user_session_record)
+	globdb.Where(user_session_record).Find(&db_res)
+	for _, v := range db_res {
+		if v.Name == current_user[0] && v.Token == current_token[0] {
+			c.Next()
+			return
+		}
+	}
+	c.JSON(http.StatusBadRequest, gin.H{
+		"status":  "false",
+		"message": "You are not authenticated to do this!",
+	})
+   c.Abort()
 }
 
 func get_image_compare_perc(
@@ -58,6 +96,7 @@ func main() {
 	protoclient := proto.NewComparatorClient(conn)
 
 	db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{})
+	globdb = db
 	if err != nil {
 		fmt.Println("Error", err)
 		return
@@ -70,6 +109,7 @@ func main() {
 	db.AutoMigrate(&database.LeaderboardRecord{})
 	db.AutoMigrate(&database.User{})
 	db.AutoMigrate(&database.Question{})
+	db.AutoMigrate(&database.Sessions{})
 	log.Println("Finished DB Automigration")
 
 	r := gin.Default()
@@ -81,14 +121,144 @@ func main() {
 	})
 
 	r.GET("/login", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "login",
+		var b LoginUserRequestJSON
+		err := c.BindJSON(&b)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "false",
+				"message": "Invalid request",
+			})
+			return
+		}
+		checkuserstruct := database.User{
+			Name: b.Username,
+		}
+		var db_res []database.User
+		db.Where(&checkuserstruct).Find(&db_res)
+
+		for _, v := range db_res {
+			if v.Name == b.Username && v.Password == b.Password {
+				//Need to generate token and track in database
+				//If already in database, dont allow login
+				time_now := string(time.Now().Unix())
+				live_token, err := bcrypt.GenerateFromPassword([]byte(time_now), bcrypt.DefaultCost)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"status":  "error",
+						"message": "Something went wrong generating time in server",
+					})
+					return
+				}
+				session_search_query := database.Sessions{
+					Name: v.Name,
+				}
+				log.Println(session_search_query)
+				var db_res2 []database.Sessions
+				db.Where(&session_search_query).Find(&db_res2)
+				for _, vi := range db_res2 {
+					if vi.Name == v.Name {
+						c.JSON(http.StatusBadRequest, gin.H{
+							"status":  "false",
+							"message": "User already logged in!",
+						})
+						return
+					}
+				}
+				//If it reaches here means, there is no login/session tokens for user
+				new_session_record := database.Sessions{
+					Name:  v.Name,
+					Token: string(live_token),
+				}
+				result := db.Create(&new_session_record)
+				if result.Error != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"status":  "error",
+						"message": "Error logging in user!",
+						"error":   result.Error,
+					})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{
+					"status":  "true",
+					"message": "logged in!",
+					"token":   string(live_token),
+				})
+            return
+			}
+		}
+		//User not found
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "false",
+			"message": "user does not exists or wrong credentials!",
 		})
 	})
 
 	r.POST("/register", func(c *gin.Context) {
+		var b RegisterUserRequestJSON
+		err := c.BindJSON(&b)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "false",
+				"message": "Invalid request",
+			})
+			return
+		}
+		checkuserstruct := database.User{
+			Name: b.Username,
+		}
+		var db_res []database.User
+		db.Where(checkuserstruct).Find(&db_res)
+
+		for _, v := range db_res {
+			if v.Name == b.Username {
+				c.JSON(http.StatusOK, gin.H{
+					"status":  "false",
+					"message": "User with that name already exists",
+				})
+				return
+			}
+		}
+
+		newuser := database.User{
+			Name:     b.Username,
+			Email:    b.Email,
+			Password: b.Password,
+		}
+
+		result := db.Create(&newuser)
+		if result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "false",
+				"message": "Failed to create new user",
+			})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"message": "register",
+			"status":  "true",
+			"message": "Successfully registerd!",
+		})
+	})
+
+	r.Use(auth_token_verify) //[NOTE] All endpoints below this need an active user sessions (header should have 2 fields `Username` and `Token`)
+
+	r.GET("/logout", func(c *gin.Context) {
+		//Just a normal empty request with Username and Token in header is good enough for this endpoint
+
+		username := c.Request.Header["Username"][0]
+		token := c.Request.Header["Token"][0]
+		//indexing into 0 here is fine as we will catch missing header in middleware function itself
+
+		user_session_record := database.Sessions{
+			Name:  username,
+			Token: token,
+		}
+		db.Where(&user_session_record).Delete(&user_session_record)
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "true",
+			"message": "User logged out Successfully!",
 		})
 	})
 
