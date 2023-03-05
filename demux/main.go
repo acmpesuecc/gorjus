@@ -22,7 +22,11 @@ type ImageCompareRequestJSON struct {
 	im2_name string `json:"im2_name"`
 }
 
-func get_image_compare_perc(client proto.ComparatorClient, im1_name string, im2_name string) (float32, error) {
+func get_image_compare_perc(
+	client proto.ComparatorClient,
+	im1_name string,
+	im2_name string,
+) (float32, error) {
 	value := 0.0
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)

@@ -16,6 +16,7 @@ type User struct {
 type Question struct {
 	gorm.Model
 	number             int
+	difficulty         int
 	round              int
 	reference_img      []byte
 	accuracy_threshold float64
@@ -40,6 +41,7 @@ type CompareEvent struct {
 
 type LeaderboardRecord struct {
 	gorm.Model
+	user     User
 	question Question
 	points   int
 }
