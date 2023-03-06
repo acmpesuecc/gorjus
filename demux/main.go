@@ -110,7 +110,7 @@ func main() {
 		})
 	})
 
-	r.GET("/login", func(c *gin.Context) {
+	r.POST("/login", func(c *gin.Context) {
 		var b LoginUserRequestJSON
 		err := c.BindJSON(&b)
 		if err != nil {
