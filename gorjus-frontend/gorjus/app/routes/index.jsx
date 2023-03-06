@@ -121,7 +121,7 @@ const getProgressBar = ({ progressPercentage }) => {
    
     <div class="">
       <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" value={username}/>
-      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" placeholder="SRN"/>
+
     </div>
 
   <div class="">
