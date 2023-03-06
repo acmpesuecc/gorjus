@@ -40,7 +40,7 @@ class ImageRenderServer(comparator_pb2_grpc.RendererServicer):
 
         print("[LOG] Processing Image Delivery Request", request)
 
-        with open(hti.output_path + request.name, "rb") as image:
+        with open("./render/" + request.name, "rb") as image:
             f = image.read()
             image_content = bytearray(f)
 
