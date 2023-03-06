@@ -179,10 +179,14 @@ export default function Index() {
 
       console.log("Submitting the Code => ", code);
 
+      // TODO Make this better, tie in question number here
+      var title = username + "-QUES" + image_filename_map.indexOf(referenceimgname)  + ".png"
+      setImageName(title)
+      
         // TODO Make this name a function of username and SRN or whatever
-        RenderImageFunction(code, "", "test.png")
+        RenderImageFunction(code, "", title)
           .then((response) => {
-            setImageName("test.png")
+            setImageName(title)
             console.log(response);
             return new Blob([response.data]);
           })
@@ -310,20 +314,12 @@ export default function Index() {
            </div>
          </div>
          <div className="  p-4 w-full  col-span-2  ">
-           {/* <h1 className="relative font-mono top-20 left-28">Output</h1> */}
-           {/* <span className="relative font-mono top-20 left-36 text-white">Output</span> */}
-           {/* <Slider imgref={"https://media.discordapp.net/attachments/972456002656010288/1080514369026261084/7OfjmAB6MFjGr3KoAvpHoezw6YUDiM9bOMaXLRLpriM4vkhshM1Bd5vD7kItYIFvGwKlbBvxiVK2atjZL4cuTqYQz3aJKth38hGKOXNu0IuuiGY091sgiAe6PmAkWpuLeQr0D4vpIHKGWXFjpdYTsM6ChKl3LyG1LBuYoQrnKE4ZOtbxFGXhGEboONXSqXbqFAkxYGir59R46cpWJmARRSl3K7nVHvK5Sre8ZU3gDajxFV2moprL5XVyuSq7eeO3t2AY4EJZJOyLQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRDENf8DqqfoKbgCGfcAAAAASUVORK5CYII.png"} imgsrc={"https://media.discordapp.net/attachments/972456002656010288/1080514369026261084/7OfjmAB6MFjGr3KoAvpHoezw6YUDiM9bOMaXLRLpriM4vkhshM1Bd5vD7kItYIFvGwKlbBvxiVK2atjZL4cuTqYQz3aJKth38hGKOXNu0IuuiGY091sgiAe6PmAkWpuLeQr0D4vpIHKGWXFjpdYTsM6ChKl3LyG1LBuYoQrnKE4ZOtbxFGXhGEboONXSqXbqFAkxYGir59R46cpWJmARRSl3K7nVHvK5Sre8ZU3gDajxFV2moprL5XVyuSq7eeO3t2AY4EJZJOyLQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRDENf8DqqfoKbgCGfcAAAAASUVORK5CYII.png"}/> */}
-
-           {/* <img src="https://media.discordapp.net/attachments/972456002656010288/1080514369026261084/7OfjmAB6MFjGr3KoAvpHoezw6YUDiM9bOMaXLRLpriM4vkhshM1Bd5vD7kItYIFvGwKlbBvxiVK2atjZL4cuTqYQz3aJKth38hGKOXNu0IuuiGY091sgiAe6PmAkWpuLeQr0D4vpIHKGWXFjpdYTsM6ChKl3LyG1LBuYoQrnKE4ZOtbxFGXhGEboONXSqXbqFAkxYGir59R46cpWJmARRSl3K7nVHvK5Sre8ZU3gDajxFV2moprL5XVyuSq7eeO3t2AY4EJZJOyLQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRDENf8DqqfoKbgCGfcAAAAASUVORK5CYII.png" alt="lol" width="400px"  className=" relative top-0   "></img> */}
-           {/* <ImgComparisonSlider width="400px" tabindex="0"  className="rendered relative top-0">
-        <img slot="first" alt="first " width="100%" src="https://media.discordapp.net/attachments/972456002656010288/1080514369026261084/7OfjmAB6MFjGr3KoAvpHoezw6YUDiM9bOMaXLRLpriM4vkhshM1Bd5vD7kItYIFvGwKlbBvxiVK2atjZL4cuTqYQz3aJKth38hGKOXNu0IuuiGY091sgiAe6PmAkWpuLeQr0D4vpIHKGWXFjpdYTsM6ChKl3LyG1LBuYoQrnKE4ZOtbxFGXhGEboONXSqXbqFAkxYGir59R46cpWJmARRSl3K7nVHvK5Sre8ZU3gDajxFV2moprL5XVyuSq7eeO3t2AY4EJZJOyLQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRDENf8DqqfoKbgCGfcAAAAASUVORK5CYII.png" />
-        <img slot="second" alt="second"  width="100%" src="https://media.discordapp.net/attachments/972456002656010288/1080514369026261084/7OfjmAB6MFjGr3KoAvpHoezw6YUDiM9bOMaXLRLpriM4vkhshM1Bd5vD7kItYIFvGwKlbBvxiVK2atjZL4cuTqYQz3aJKth38hGKOXNu0IuuiGY091sgiAe6PmAkWpuLeQr0D4vpIHKGWXFjpdYTsM6ChKl3LyG1LBuYoQrnKE4ZOtbxFGXhGEboONXSqXbqFAkxYGir59R46cpWJmARRSl3K7nVHvK5Sre8ZU3gDajxFV2moprL5XVyuSq7eeO3t2AY4EJZJOyLQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRDENf8DqqfoKbgCGfcAAAAASUVORK5CYII.png"/>
-      </ImgComparisonSlider> */}
            <ReactCompareSlider
              changePositionOnHover="True "
-             handle={<MyCustomHandle />}
+             // handle={<MyCustomHandle />}
              style={{ width: "400px" }}
-             className=" relative top-0 "
+             className="relative top-0 "
+             position={50}
              itemOne={<ReactCompareSliderImage src={imgsrc} alt="Image one" />}
              itemTwo={
                <ReactCompareSliderImage
