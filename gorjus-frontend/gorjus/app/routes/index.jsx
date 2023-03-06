@@ -26,6 +26,8 @@ export default function Index() {
    const [userid, setUserid] = useState("");
    const [username, setUsername] = useState('');
    const [password, setPassword] = useState('');
+   const [token, setToken] = useState("");
+   const [loginStatus, setLoginStatus] = useState(null);
    // let default = "<html></html>"
 
    function handleLogin(value, event) {
@@ -38,7 +40,12 @@ export default function Index() {
          })
          .then((response) => {
             console.log(response);
-            setUserid(response.data);
+            if (response.data.status === "false") {
+               console.log("Error logging in!")
+            } else {
+               setToken(response.data.token);
+               setLoginStatus(true);
+            }
          })
          .catch((error) => {
             console.log(error);
@@ -105,7 +112,7 @@ export default function Index() {
       //   .then((url) => console.log(setImgSrc(url)))
       //   .catch((err) => console.error(err));
    }
-   let defaultCode = "<html></html>";
+   // let defaultCode = "<html></html>";
    useEffect(() => {
       const code = localStorage.getItem('code');
 
@@ -142,7 +149,7 @@ export default function Index() {
                </div>
             </form>
 
-            <button onClick={handleLogin} class="shadow    hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent   focus:shadow-outline focus:outline-none font-bold py-2 px-4 rounded h-10 w-32">
+            <button onClick={handleLogin} className={` ${loginStatus && "hidden"} shadow    hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent   focus:shadow-outline focus:outline-none font-bold py-2 px-4 rounded h-10 w-32`}>
                Sign Up
             </button>
          </div>
@@ -174,10 +181,10 @@ export default function Index() {
                <div
                   className="flex items-centre relative mt-5"
                >
-                  <button type="submit" onClick={handleSubmit} className="   font-semibold py-2 px-4 hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent rounded  mx-auto  ">
+                  <button type="submit" onClick={handleSubmit} className={` ${!loginStatus && "hidden"} font-semibold py-2 px-4 hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent rounded  mx-auto  `}>
                      Renderr
                   </button>
-                  <button type="submit" onClick={handleSubmit} className="  bg-transparent  hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded   mx-auto  ">
+                  <button type="submit" onClick={handleSubmit} className={` ${!loginStatus && "hidden"}  bg-transparent  hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded   mx-auto  `}>
                      Compare
                   </button>
                </div>
@@ -215,5 +222,5 @@ export default function Index() {
             </span>
          </footer>
       </>
-   );
-}
+
+})
