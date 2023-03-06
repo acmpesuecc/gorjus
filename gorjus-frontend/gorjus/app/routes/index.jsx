@@ -24,6 +24,8 @@ export default function Index() {
   const [imgsrc, setImgSrc] = useState("");
   const [accuracy, setProgressBar] = useState("");
   const [userid, setUserid] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   // let default = "<html></html>"
   
   function handleLogin(value, event) {
@@ -114,17 +116,17 @@ const getProgressBar = ({ progressPercentage }) => {
     className="p-4 my-5 mx-5  flex bg-[#1e1e1e] gap-4 lg shadow justify-center rounded items-center text-center   dark:bg-gray-800"
     >
       <span class="text-sm text-gray-500 text-center dark:text-gray-400 w-1/2"> <a href="/" class="hover:underline">CSS Battle !!!</a></span>
-      <form class="w-full flex ">
+      <form onSubmit={handleLogin} class="w-full flex  ">
   <div class=" justify-evenly flex gap-2  ">
    
     <div class="">
-      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" value="SRN"/>
+      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" value={username}/>
     </div>
 
   <div class="">
     
     <div class="">
-      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-password" type="password" placeholder="SRN"/>
+      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-password" type="password" value={password} placeholder="SRN"/>
     </div>
   </div>
   
