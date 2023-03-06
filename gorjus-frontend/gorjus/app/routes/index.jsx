@@ -30,7 +30,7 @@ export default function Index() {
   
   function handleLogin(value, event) {
     axios
-      .post("http://localhost:9000/login", {
+      .get("http://localhost:8080/login", {
         username: value.username,
         password: value.password,
       })
@@ -121,6 +121,7 @@ const getProgressBar = ({ progressPercentage }) => {
    
     <div class="">
       <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" value={username}/>
+      <input class="bg-gray-600 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" placeholder="SRN"/>
     </div>
 
   <div class="">
@@ -133,7 +134,7 @@ const getProgressBar = ({ progressPercentage }) => {
   <div class="md:flex md:items-center">
     <div class="md:w-1/3"></div>
     <div class="md:w-2/3">
-      <button class="shadow    hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent   focus:shadow-outline focus:outline-none font-bold py-2 px-4 rounded h-10 w-32" type="button">
+      <button onclick={handleLogin} class="shadow    hover:text-white  border bg-transparent  hover:bg-blue-500 text-blue-700 border-blue-500 hover:border-transparent   focus:shadow-outline focus:outline-none font-bold py-2 px-4 rounded h-10 w-32" type="button">
         Sign Up
       </button>
     </div>

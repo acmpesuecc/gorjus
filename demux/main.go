@@ -10,6 +10,7 @@ import (
 
 	"github.com/anirudhRowjee/cssbatt-demux/database"
 	"github.com/anirudhRowjee/cssbatt-demux/proto"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
@@ -101,6 +102,7 @@ func main() {
 	log.Println("Finished DB Automigration")
 
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
