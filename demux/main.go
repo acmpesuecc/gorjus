@@ -251,7 +251,7 @@ func main() {
 		})
 	})
 
-	r.Use(auth_token_verify) //[NOTE] All endpoints below this need an active user sessions (header should have 2 fields `Username` and `Token`)
+	// r.Use(auth_token_verify) //[NOTE] All endpoints below this need an active user sessions (header should have 2 fields `Username` and `Token`)
 
 	r.GET("/logout", func(c *gin.Context) {
 		//Just a normal empty request with Username and Token in header is good enough for this endpoint
