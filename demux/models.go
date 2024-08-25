@@ -8,40 +8,40 @@ import (
 
 type User struct {
 	gorm.Model
-	name     string
-	email    string
-	password string
+	Name     string
+	Email    string
+	Password string
 }
 
 type Question struct {
 	gorm.Model
-	number             int
-	difficulty         int
-	round              int
-	reference_img      []byte
-	accuracy_threshold float64
+	Number             int
+	Difficulty         int
+	Round              int
+	Reference_img_path string
+	Accuracy_threshold float64
 }
 
 type RenderEvent struct {
 	gorm.Model
-	user                  User
-	question              Question
-	css_content           string
-	rendered_output_image []byte
-	rendered_time         time.Time
+	User                  User
+	Question              Question
+	Css_content           string
+	Rendered_output_image []byte
+	Rendered_time         time.Time
 }
 
 type CompareEvent struct {
 	gorm.Model
-	user                User
-	question            Question
-	render_event        RenderEvent
-	accuracy_percentage float64
+	User                User
+	Question            Question
+	Render_event        RenderEvent
+	Accuracy_percentage float64
 }
 
 type LeaderboardRecord struct {
 	gorm.Model
-	user     User
-	question Question
-	points   int
+	User     User
+	Question Question
+	Points   int
 }

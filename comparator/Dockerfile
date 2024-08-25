@@ -18,6 +18,7 @@ COPY ./src ./src
 # build for release
 RUN rm ./target/release/deps/holodeck*
 RUN cargo build --release
+RUN tree
 
 # our final base
 FROM debian:buster-slim
